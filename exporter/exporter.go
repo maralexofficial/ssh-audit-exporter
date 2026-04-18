@@ -183,26 +183,29 @@ func (p *Parser) Parse(line string) {
 			continue
 		}
 
-		// SAFE label extraction
+		// m[0] = full match, m[1:] = capture groups
+		groups := m[1:]
+
+		if len(groups) < len(r.Rule.Labels) {
+			continue
+		}
+
 		labels := make([]string, len(r.Rule.Labels))
 
 		for i := range r.Rule.Labels {
-
-			if i+1 < len(m) {
-				labels[i] = m[i+1]
+			if i < len(groups) {
+				labels[i] = groups[i]
 			} else {
 				labels[i] = "unknown"
 			}
 		}
 
-		// SAFE metric routing
 		switch r.Rule.Metric {
 
 		case "ssh_logins":
-			if len(labels) != len(r.Rule.Labels) {
-				continue
+			if len(labels) == 2 {
+				sshLogins.WithLabelValues(labels[0], labels[1]).Inc()
 			}
-			sshLogins.WithLabelValues(labels...).Inc()
 
 		case "ssh_sessions":
 			if len(labels) == 1 {
