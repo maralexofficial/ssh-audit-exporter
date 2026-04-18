@@ -24,7 +24,7 @@ WORKDIR /app
 
 COPY --from=builder /app/exporter .
 
-COPY .env .env
+COPY .env.example .env
 
 RUN chown exporter:exporter /app/exporter
 
