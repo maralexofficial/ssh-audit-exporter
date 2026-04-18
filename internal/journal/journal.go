@@ -18,7 +18,8 @@ func TailSSHJournal(parse func(string)) error {
 
 	_ = j.SeekTail()
 
-	//_ = j.AddMatch("_COMM=sshd")
+	// DEBUG: KEIN FILTER
+	// _ = j.AddMatch("_COMM=sshd")
 
 	for {
 		n, err := j.Next()
@@ -35,17 +36,17 @@ func TailSSHJournal(parse func(string)) error {
 		if err != nil {
 			continue
 		}
-		
-		logger.Info("RAW ENTRY FIELDS:")
+
+		logger.Info("---- JOURNAL ENTRY ----")
+
 		for k, v := range entry.Fields {
 			logger.Info(k + "=" + v)
 		}
-		
-		/*
+
 		msg := entry.Fields["MESSAGE"]
 		if msg != "" {
+			logger.Info("MESSAGE=" + msg)
 			parse(msg)
 		}
-		*/
 	}
 }
