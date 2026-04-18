@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"net/http"
+	"strings"
 
 	"ssh-audit-exporter/exporter"
 	"ssh-audit-exporter/internal/journal"
@@ -15,15 +16,24 @@ import (
 )
 
 var (
-	cliLogFile      string
-	cliSuccessRegex string
-	cliFailRegex    string
+	cliLogFile string
+	cliRules   ruleFlags
 )
 
+type ruleFlags []string
+
+func (r *ruleFlags) String() string {
+	return strings.Join(*r, ",")
+}
+
+func (r *ruleFlags) Set(value string) error {
+	*r = append(*r, value)
+	return nil
+}
+
 func init() {
-	flag.StringVar(&cliLogFile, "logfile", "", "")
-	flag.StringVar(&cliSuccessRegex, "success-regex", "", "")
-	flag.StringVar(&cliFailRegex, "fail-regex", "", "")
+	flag.StringVar(&cliLogFile, "logfile", "", "path to log file")
+	flag.Var(&cliRules, "rule", "filter rules in format type:regex (can be repeated)")
 }
 
 func main() {
@@ -35,15 +45,13 @@ func main() {
 
 	exporter.RegisterMetrics()
 
-	cfg := exporter.LoadConfig(cliSuccessRegex, cliFailRegex)
-
-	successRegex, failRegex, err := exporter.CompileRegex(cfg)
+	rules, err := exporter.ParseRules(cliRules)
 	if err != nil {
-		logger.Error("Invalid regex configuration: " + err.Error())
+		logger.Error("invalid rules: " + err.Error())
 		return
 	}
 
-	exporter.InitParser(successRegex, failRegex)
+	parser := exporter.NewParser(rules)
 
 	mode := source.GetSourceType()
 
@@ -53,7 +61,7 @@ func main() {
 		logger.Info("Using journald (journalctl stream) as source")
 
 		go func() {
-			if err := journal.TailSSHJournal(exporter.ParseLine); err != nil {
+			if err := journal.TailSSHJournal(parser.Parse); err != nil {
 				logger.Error("journalctl stream failed: " + err.Error())
 			}
 		}()
@@ -68,7 +76,7 @@ func main() {
 		logger.Success("Using file: " + logFile)
 
 		go func() {
-			if err := logfile.TailFile(logFile, exporter.ParseLine); err != nil {
+			if err := logfile.TailFile(logFile, parser.Parse); err != nil {
 				logger.Error("file tail failed: " + err.Error())
 			}
 		}()
