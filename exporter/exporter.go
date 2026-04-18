@@ -38,28 +38,28 @@ var defaultConfig = Config{
 			Name:   "ssh_auth_failure",
 			Type:   "fail",
 			Metric: "ssh_events",
-			Regex:  `authentication failure;.*user=(\w+) from ([0-9.]+)`,
+			Regex:  `authentication failure;.*user=(\w+)`,
 		},
 
 		{
 			Name:   "ssh_connection_closed",
 			Type:   "info",
 			Metric: "ssh_events",
-			Regex:  `Connection closed by .* user (\w+) from ([0-9.]+)`,
+			Regex:  `Connection closed by .* user (\w+)`,
 		},
 
 		{
 			Name:   "ssh_session_open",
 			Type:   "info",
 			Metric: "ssh_sessions",
-			Regex:  `session opened for user (\w+) from ([0-9.]+)`,
+			Regex:  `session opened for user (\w+)`,
 		},
 
 		{
 			Name:   "ssh_session_close",
 			Type:   "info",
 			Metric: "ssh_sessions",
-			Regex:  `session closed for user (\w+) from ([0-9.]+)`,
+			Regex:  `session closed for user (\w+)`,
 		},
 	},
 }
