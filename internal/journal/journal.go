@@ -18,7 +18,7 @@ func TailSSHJournal(parse func(string)) error {
 
 	_ = j.SeekTail()
 
-	_ = j.AddMatch("_COMM=sshd")
+	//_ = j.AddMatch("_COMM=sshd")
 
 	for {
 		n, err := j.Next()
