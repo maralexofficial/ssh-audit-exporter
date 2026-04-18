@@ -35,10 +35,17 @@ func TailSSHJournal(parse func(string)) error {
 		if err != nil {
 			continue
 		}
-
+		
+		logger.Info("RAW ENTRY FIELDS:")
+		for k, v := range entry.Fields {
+			logger.Info(k + "=" + v)
+		}
+		
+		/*
 		msg := entry.Fields["MESSAGE"]
 		if msg != "" {
 			parse(msg)
 		}
+		*/
 	}
 }
