@@ -185,7 +185,6 @@ func (p *Parser) Parse(line string) {
 			continue
 		}
 
-		// Build labels dynamically
 		labels := make([]string, 0, len(r.Rule.Labels))
 
 		for i := range r.Rule.Labels {
@@ -199,13 +198,19 @@ func (p *Parser) Parse(line string) {
 		switch r.Rule.Metric {
 
 		case "ssh_logins":
-			sshLogins.WithLabelValues(labels...).Inc()
+			if len(labels) == 2 {
+				sshLogins.WithLabelValues(labels[0], labels[1]).Inc()
+			}
 
 		case "ssh_sessions":
-			sshSessions.WithLabelValues(labels...).Inc()
+			if len(labels) == 1 {
+				sshSessions.WithLabelValues(labels[0]).Inc()
+			}
 
 		case "ssh_events":
-			sshEvents.WithLabelValues(labels...).Inc()
+			if len(labels) == 1 {
+				sshEvents.WithLabelValues(labels[0]).Inc()
+			}
 		}
 
 		return
