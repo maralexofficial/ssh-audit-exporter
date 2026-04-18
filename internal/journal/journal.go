@@ -16,7 +16,8 @@ func TailSSHJournal(parse func(string)) error {
 	}
 	defer j.Close()
 
-	_ = j.SeekTail()
+	_ = j.SeekHead()
+	// _ = j.SeekTail()
 
 	// DEBUG: KEIN FILTER
 	// _ = j.AddMatch("_COMM=sshd")
