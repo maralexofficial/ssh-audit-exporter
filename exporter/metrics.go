@@ -4,14 +4,14 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-var SSHLogins = prometheus.NewCounterVec(
+var sshLogins = prometheus.NewCounterVec(
 	prometheus.CounterOpts{
 		Name: "ssh_logins_total",
 		Help: "Total number of SSH login attempts",
 	},
-	[]string{"status"},
+	[]string{"status", "user", "ip"},
 )
 
 func RegisterMetrics() {
-	prometheus.MustRegister(SSHLogins)
+	prometheus.MustRegister(sshLogins)
 }

@@ -1,79 +1,63 @@
 package main
 
 import (
-	"fmt"
+	"flag"
 	"net/http"
-	"os"
 
 	"ssh-audit-exporter/exporter"
+	"ssh-audit-exporter/internal/journal"
+	"ssh-audit-exporter/internal/logfile"
+	"ssh-audit-exporter/internal/source"
 	"ssh-audit-exporter/logger"
 
-	"github.com/hpcloud/tail"
-	promhttp "github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/joho/godotenv"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-var logPaths = []string{
-	"/var/log/auth.log",
-	"/var/log/secure",
-}
+var cliLogFile string
+var cliSuccessRegex string
+var cliFailRegex string
 
-func findLogFile() (string, error) {
-	for _, path := range logPaths {
-		file, err := os.Open(path)
-		if err == nil {
-			file.Close()
-			return path, nil
-		}
-	}
-	return "", fmt.Errorf("no readable SSH log file found (missing or permission denied)")
-}
-
-func tailLog(file string) {
-	logger.Info("Starting log monitoring: " + file)
-
-	t, err := tail.TailFile(file, tail.Config{
-		Follow: true,
-		ReOpen: true,
-	})
-	if err != nil {
-		logger.Error("Failed to open log file: " + err.Error())
-		os.Exit(1)
-	}
-
-	for line := range t.Lines {
-		if line == nil {
-			continue
-		}
-		exporter.ParseLine(line.Text)
-	}
+func init() {
+	flag.StringVar(&cliLogFile, "logfile", "", "")
+	flag.StringVar(&cliSuccessRegex, "success-regex", "", "")
+	flag.StringVar(&cliFailRegex, "fail-regex", "", "")
 }
 
 func main() {
+
+	_ = godotenv.Load()
+	flag.Parse()
+
 	logger.Info("Starting SSH audit exporter")
 
 	exporter.RegisterMetrics()
 
-	logFile, err := findLogFile()
-	if err != nil {
-		logger.Error(err.Error())
-		logger.Warning("Checked log paths:")
-		for _, p := range logPaths {
-			logger.Warning(" - " + p)
+	cfg := exporter.LoadConfig(cliSuccessRegex, cliFailRegex)
+	successRegex, failRegex, _ := exporter.CompileRegex(cfg)
+	exporter.InitParser(successRegex, failRegex)
+
+	mode := source.GetSourceType()
+
+	switch mode {
+
+	case source.Journal:
+		logger.Info("Using journald as source")
+		go journal.TailSSHJournal(exporter.ParseLine)
+
+	default:
+		logFile, err := logfile.GetLogFile(cliLogFile)
+		if err != nil {
+			logger.Error("No log file found")
+			return
 		}
-		logger.Warning("System might be using journald instead of log files")
-		return
+
+		logger.Success("Using file: " + logFile)
+		go logfile.TailFile(logFile, exporter.ParseLine)
 	}
-
-	logger.Success("Using log file: " + logFile)
-
-	go tailLog(logFile)
 
 	http.Handle("/metrics", promhttp.Handler())
 
-	logger.Info("Metrics available at http://localhost:9100/metrics")
-
-	err = http.ListenAndServe(":9100", nil)
-	if err != nil {
-		logger.Error("HTTP server failed: " + err.Error())
-	}
+	logger.Info("Metrics available on :9100")
+	http.ListenAndServe(":9100", nil)
 }

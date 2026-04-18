@@ -1,0 +1,18 @@
+ervices:
+  ssh-exporter:
+    image: ssh-audit-exporter
+    container_name: ssh-exporter
+
+    ports:
+      - "9100:9100"
+
+    environment:
+      SSH_LOG_TYPE: journal
+
+    volumes:
+      - /run/systemd/journal/socket:/run/systemd/journal/socket:ro
+
+    env_file:
+      - .env
+
+    restart: unless-stopped

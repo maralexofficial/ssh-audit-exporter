@@ -1,0 +1,15 @@
+services:
+  ssh-exporter:
+    image: ssh-audit-exporter
+    container_name: ssh-exporter
+
+    ports:
+      - "9100:9100"
+
+    volumes:
+      - /var/log/auth.log:/var/log/auth.log:ro
+
+    env_file:
+      - .env
+
+    restart: unless-stopped

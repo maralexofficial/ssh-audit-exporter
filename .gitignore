@@ -1,0 +1,48 @@
+# Binaries
+/bin/
+/build/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# SH / BASH
+*.sh
+
+# Go build output
+*.out
+
+# Test binaries
+*.test
+
+# Coverage
+*.cover
+coverage.out
+
+# Logs
+*.log
+
+# Environment files (secrets!)
+!.env.example
+.env
+.env.*
+!.env.example
+
+# IDEs
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Go modules cache (optional local cleanup)
+vendor/
+
+# Temporary files
+tmp/
+temp/
+
+# Crash dumps
+*.stackdump
