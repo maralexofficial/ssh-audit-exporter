@@ -1,6 +1,6 @@
-FROM golang:1.26-alpine AS builder
+FROM golang:1.26 AS builder
 
-RUN apk add --no-cache git build-base linux-headers
+RUN apt-get update && apt-get install -y gcc libc6-dev
 
 WORKDIR /app
 
