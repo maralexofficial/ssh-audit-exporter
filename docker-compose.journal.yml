@@ -3,16 +3,18 @@ services:
     image: ssh-audit-exporter
     container_name: ssh-exporter
 
+    user: root
+
     ports:
       - "9100:9100"
-
+      
     environment:
       SSH_LOG_TYPE: journal
 
     volumes:
-      - /run/systemd/journal/socket:/run/systemd/journal/socket:ro
-      - /run/log/journal:/run/log/journal:ro
-      - /usr/bin/journalctl:/usr/bin/journalctl:ro
+      - /var/log/journal:/var/log/journal:ro
+      - /run/systemd/journal:/run/systemd/journal:ro
+      - /etc/machine-id:/etc/machine-id:ro
 
     env_file:
       - .env

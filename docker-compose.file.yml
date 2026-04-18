@@ -3,8 +3,13 @@ services:
     image: ssh-audit-exporter
     container_name: ssh-exporter
 
+    user: root
+
     ports:
       - "9100:9100"
+      
+    environment:
+      SSH_LOG_TYPE: file
 
     volumes:
       - /var/log/auth.log:/var/log/auth.log:ro
