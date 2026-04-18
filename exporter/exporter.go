@@ -21,45 +21,52 @@ type Config struct {
 var defaultConfig = Config{
 	Rules: []Rule{
 		{
-			Name:   "ssh_login_success",
+			Name:   "ssh_success",
 			Type:   "success",
 			Metric: "ssh_logins",
 			Regex:  `Accepted .* for (\w+) from ([0-9.]+)`,
 		},
-
 		{
-			Name:   "ssh_login_fail",
+			Name:   "ssh_failed",
 			Type:   "fail",
 			Metric: "ssh_logins",
-			Regex:  `Failed password for (\w+) from ([0-9.]+)`,
+			Regex:  `Failed .* for (\w+) from ([0-9.]+)`,
 		},
-
 		{
-			Name:   "ssh_auth_failure",
-			Type:   "fail",
-			Metric: "ssh_events",
-			Regex:  `authentication failure;.*user=(\w+)`,
-		},
-
-		{
-			Name:   "ssh_connection_closed",
-			Type:   "info",
-			Metric: "ssh_events",
-			Regex:  `Connection closed by .* user (\w+)`,
-		},
-
-		{
-			Name:   "ssh_session_open",
+			Name:   "session_open",
 			Type:   "info",
 			Metric: "ssh_sessions",
-			Regex:  `session opened for user (\w+)`,
+			Regex:  `pam_unix\(sshd:session\): session opened for user (\w+)`,
 		},
-
 		{
-			Name:   "ssh_session_close",
+			Name:   "session_close",
 			Type:   "info",
 			Metric: "ssh_sessions",
-			Regex:  `session closed for user (\w+)`,
+			Regex:  `pam_unix\(sshd:session\): session closed for user (\w+)`,
+		},
+		{
+			Name:   "su_open",
+			Type:   "info",
+			Metric: "ssh_sessions",
+			Regex:  `pam_unix\(su:session\): session opened for user (\w+)`,
+		},
+		{
+			Name:   "su_close",
+			Type:   "info",
+			Metric: "ssh_sessions",
+			Regex:  `pam_unix\(su:session\): session closed for user (\w+)`,
+		},
+		{
+			Name:   "sudo",
+			Type:   "info",
+			Metric: "ssh_events",
+			Regex:  `sudo:.* USER=(\w+)`,
+		},
+		{
+			Name:   "disconnect",
+			Type:   "info",
+			Metric: "ssh_events",
+			Regex:  `Disconnected from user (\w+)`,
 		},
 	},
 }
