@@ -22,9 +22,9 @@ RUN addgroup -g $GID exporter && adduser -D -u $UID -G exporter exporter
 
 WORKDIR /app
 
-COPY --from=builder /app/exporter .
+COPY --from=builder /app/exporter /app/exporter
 
-COPY .env.example .env
+COPY .env.example /app/.env
 
 RUN chown exporter:exporter /app/exporter
 
@@ -32,4 +32,4 @@ USER exporter
 
 EXPOSE 9100
 
-CMD ["./exporter"]
+CMD ["/app/exporter"]
