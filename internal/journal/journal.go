@@ -16,39 +16,18 @@ func TailSSHJournal(parse func(string)) error {
 	}
 	defer j.Close()
 
-	_ = j.SeekTail()
+	_ = j.AddMatch("_SYSTEMD_UNIT=sshd.service")
+	_ = j.AddMatch("_SYSTEMD_UNIT=sshd-session.service")
 
-	// _ = j.AddMatch("_COMM=sshd")
+	if err := j.SeekTail(); err != nil {
+		return err
+	}
+
+	_, _ = j.Next()
 
 	for {
-		n, err := j.Next()
-		if err != nil {
-			return err
-		}
-
-		if n == 0 {
-			j.Wait(sdjournal.IndefiniteWait)
-			continue
-		}
-
 		for {
-			entry, err := j.GetEntry()
-			if err != nil {
-				break
-			}
-
-			logger.Info("---- JOURNAL ENTRY ----")
-
-			for k, v := range entry.Fields {
-				logger.Info(k + "=" + v)
-			}
-
-			if msg := entry.Fields["MESSAGE"]; msg != "" {
-				logger.Info("MESSAGE=" + msg)
-				parse(msg)
-			}
-
-			n, err = j.Next()
+			n, err := j.Next()
 			if err != nil {
 				return err
 			}
@@ -56,6 +35,19 @@ func TailSSHJournal(parse func(string)) error {
 			if n == 0 {
 				break
 			}
+
+			entry, err := j.GetEntry()
+			if err != nil {
+				continue
+			}
+
+			msg := entry.Fields["MESSAGE"]
+			if msg != "" {
+				logger.Info("SSH EVENT: " + msg)
+				parse(msg)
+			}
 		}
+
+		j.Wait(sdjournal.IndefiniteWait)
 	}
 }
