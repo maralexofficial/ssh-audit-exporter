@@ -1,7 +1,7 @@
 services:
   ssh-exporter:
-    image: ssh-audit-exporter
-    container_name: ssh-exporter
+    image: maralexofficial/ssh-audit-exporter:latest
+    container_name: prometheus-ssh-audit-exporter
 
     user: root
 

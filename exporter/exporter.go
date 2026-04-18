@@ -6,14 +6,10 @@ import (
 	"strings"
 )
 
-// -----------------------------
-// Rule Definition
-// -----------------------------
-
 type Rule struct {
 	Name   string
 	Regex  string
-	Type   string // success | fail | info | any
+	Type   string
 	Metric string
 	Labels []string
 }
@@ -22,10 +18,6 @@ type compiledRule struct {
 	Rule  Rule
 	Regex *regexp.Regexp
 }
-
-// -----------------------------
-// Default Rules
-// -----------------------------
 
 var defaultConfig = []Rule{
 	{
@@ -78,10 +70,6 @@ var defaultConfig = []Rule{
 		Labels: []string{"user"},
 	},
 }
-
-// -----------------------------
-// CLI Rule Parsing
-// -----------------------------
 
 func ParseRules(input []string) ([]Rule, error) {
 
@@ -142,10 +130,6 @@ func ParseRules(input []string) ([]Rule, error) {
 	return rules, nil
 }
 
-// -----------------------------
-// Parser
-// -----------------------------
-
 type Parser struct {
 	rules []compiledRule
 }
@@ -170,10 +154,6 @@ func NewParser(rules []Rule) *Parser {
 	return &Parser{rules: compiled}
 }
 
-// -----------------------------
-// SAFE Parse (NO PANIC EVER)
-// -----------------------------
-
 func (p *Parser) Parse(line string) {
 
 	for _, r := range p.rules {
@@ -183,10 +163,8 @@ func (p *Parser) Parse(line string) {
 			continue
 		}
 
-		// m[0] = full match
 		groups := m[1:]
 
-		// safety check
 		if len(groups) < len(r.Rule.Labels) {
 			continue
 		}
@@ -196,12 +174,11 @@ func (p *Parser) Parse(line string) {
 		switch r.Rule.Metric {
 
 		case "ssh_logins":
-			// status + user + ip REQUIRED
 			if len(values) != 2 {
 				continue
 			}
 
-			status := r.Rule.Type // success/fail
+			status := r.Rule.Type
 			user := values[0]
 			ip := values[1]
 
