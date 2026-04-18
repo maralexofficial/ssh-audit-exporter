@@ -5,8 +5,8 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     gcc \
     libc6-dev \
-    libsystemd-dev &&
-    rm -rf /var/lib/apt/lists/*
+    libsystemd-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
