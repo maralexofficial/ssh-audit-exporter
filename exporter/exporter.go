@@ -209,12 +209,12 @@ func (p *Parser) Parse(line string) {
 
 		case "ssh_sessions":
 			if len(values) == 1 {
-				sshSessions.WithLabelValues(values[0]).Inc()
+				sshSessions.WithLabelValues(r.Rule.Name, values[0]).Inc()
 			}
 
 		case "ssh_events":
 			if len(values) == 1 {
-				sshEvents.WithLabelValues(values[0]).Inc()
+				sshEvents.WithLabelValues(r.Rule.Type, values[0]).Inc()
 			}
 		}
 
