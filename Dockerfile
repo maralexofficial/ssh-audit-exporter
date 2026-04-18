@@ -1,6 +1,12 @@
 FROM golang:1.26 AS builder
 
-RUN apt-get update && apt-get install -y git ca-certificates
+RUN apt-get update && apt-get install -y \
+    git \
+    ca-certificates \
+    gcc \
+    libc6-dev \
+    libsystemd-dev &&
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -9,14 +15,13 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 go build -o ssh-audit-exporter .
+RUN CGO_ENABLED=1 GOOS=linux go build -o ssh-audit-exporter .
 
 FROM debian:bookworm-slim
 
 RUN apt-get update && apt-get install -y \
-    ca-certificates \
-    systemd \
-    && rm -rf /var/lib/apt/lists/*
+    ca-certificates &&
+    rm -rf /var/lib/apt/lists/*
 
 ARG UID=1000
 ARG GID=1000
