@@ -21,28 +21,45 @@ type Config struct {
 var defaultConfig = Config{
 	Rules: []Rule{
 		{
-			Name:   "ssh_success",
+			Name:   "ssh_login_success",
 			Type:   "success",
 			Metric: "ssh_logins",
 			Regex:  `Accepted .* for (\w+) from ([0-9.]+)`,
 		},
+
 		{
-			Name:   "ssh_failed",
+			Name:   "ssh_login_fail",
 			Type:   "fail",
 			Metric: "ssh_logins",
-			Regex:  `Failed .* for (\w+) from ([0-9.]+)`,
+			Regex:  `Failed password for (\w+) from ([0-9.]+)`,
 		},
+
 		{
-			Name:   "su_session",
-			Type:   "info",
-			Metric: "ssh_sessions",
-			Regex:  `session (opened|closed) for user (\w+)`,
+			Name:   "ssh_auth_failure",
+			Type:   "fail",
+			Metric: "ssh_events",
+			Regex:  `authentication failure;.*user=(\w+) from ([0-9.]+)`,
 		},
+
 		{
-			Name:   "disconnect",
+			Name:   "ssh_connection_closed",
 			Type:   "info",
 			Metric: "ssh_events",
-			Regex:  `Disconnected from user (\w+)`,
+			Regex:  `Connection closed by .* user (\w+) from ([0-9.]+)`,
+		},
+
+		{
+			Name:   "ssh_session_open",
+			Type:   "info",
+			Metric: "ssh_sessions",
+			Regex:  `session opened for user (\w+) from ([0-9.]+)`,
+		},
+
+		{
+			Name:   "ssh_session_close",
+			Type:   "info",
+			Metric: "ssh_sessions",
+			Regex:  `session closed for user (\w+) from ([0-9.]+)`,
 		},
 	},
 }

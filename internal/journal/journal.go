@@ -16,8 +16,7 @@ func TailSSHJournal(parse func(string)) error {
 	}
 	defer j.Close()
 
-	// _ = j.AddMatch("_SYSTEMD_UNIT=sshd.service")
-	// _ = j.AddMatch("_SYSTEMD_UNIT=sshd-session.service")
+	j.AddMatch("_SYSTEMD_UNIT=ssh.service")
 
 	if err := j.SeekTail(); err != nil {
 		return err
