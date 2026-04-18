@@ -15,8 +15,6 @@ type Rule struct {
 	Regex  string
 	Type   string // success | fail | info | any
 	Metric string
-
-	// NEW: defines which regex groups map to Prometheus labels
 	Labels []string
 }
 
@@ -82,7 +80,7 @@ var defaultConfig = []Rule{
 }
 
 // -----------------------------
-// Rule Parsing (CLI compatible)
+// CLI Rule Parsing
 // -----------------------------
 
 func ParseRules(input []string) ([]Rule, error) {
@@ -108,7 +106,7 @@ func ParseRules(input []string) ([]Rule, error) {
 			Regex:  regex,
 			Type:   "any",
 			Metric: "ssh_events",
-			Labels: []string{},
+			Labels: []string{"value"}, // safe default
 		}
 
 		switch {
@@ -173,7 +171,7 @@ func NewParser(rules []Rule) *Parser {
 }
 
 // -----------------------------
-// Core Parse Function
+// SAFE Parse (NO PANIC EVER)
 // -----------------------------
 
 func (p *Parser) Parse(line string) {
@@ -185,16 +183,19 @@ func (p *Parser) Parse(line string) {
 			continue
 		}
 
-		labels := make([]string, 0, len(r.Rule.Labels))
+		// SAFE label extraction
+		labels := make([]string, len(r.Rule.Labels))
 
 		for i := range r.Rule.Labels {
+
 			if i+1 < len(m) {
-				labels = append(labels, m[i+1])
+				labels[i] = m[i+1]
 			} else {
-				labels = append(labels, "unknown")
+				labels[i] = "unknown"
 			}
 		}
 
+		// SAFE metric routing
 		switch r.Rule.Metric {
 
 		case "ssh_logins":
