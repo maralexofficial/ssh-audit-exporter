@@ -7,6 +7,10 @@
 *.so
 *.dylib
 
+# Docker
+!docker-compose.*.yml
+docker-compose.yml
+
 # SH / BASH
 *.sh
 
