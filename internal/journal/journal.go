@@ -16,10 +16,8 @@ func TailSSHJournal(parse func(string)) error {
 	}
 	defer j.Close()
 
-	_ = j.SeekHead()
-	// _ = j.SeekTail()
+	_ = j.SeekTail()
 
-	// DEBUG: KEIN FILTER
 	// _ = j.AddMatch("_COMM=sshd")
 
 	for {
@@ -33,21 +31,31 @@ func TailSSHJournal(parse func(string)) error {
 			continue
 		}
 
-		entry, err := j.GetEntry()
-		if err != nil {
-			continue
-		}
+		for {
+			entry, err := j.GetEntry()
+			if err != nil {
+				break
+			}
 
-		logger.Info("---- JOURNAL ENTRY ----")
+			logger.Info("---- JOURNAL ENTRY ----")
 
-		for k, v := range entry.Fields {
-			logger.Info(k + "=" + v)
-		}
+			for k, v := range entry.Fields {
+				logger.Info(k + "=" + v)
+			}
 
-		msg := entry.Fields["MESSAGE"]
-		if msg != "" {
-			logger.Info("MESSAGE=" + msg)
-			parse(msg)
+			if msg := entry.Fields["MESSAGE"]; msg != "" {
+				logger.Info("MESSAGE=" + msg)
+				parse(msg)
+			}
+
+			n, err = j.Next()
+			if err != nil {
+				return err
+			}
+
+			if n == 0 {
+				break
+			}
 		}
 	}
 }
