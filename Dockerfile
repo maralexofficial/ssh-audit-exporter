@@ -9,7 +9,7 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ssh-audit-exporter .
+RUN CGO_ENABLED=0 go build -o ssh-audit-exporter .
 
 FROM alpine:3.20
 
