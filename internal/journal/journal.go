@@ -1,41 +1,44 @@
 package journal
 
 import (
-	"bufio"
-	"os/exec"
-
 	"ssh-audit-exporter/logger"
+
+	"github.com/coreos/go-systemd/v22/sdjournal"
 )
 
 func TailSSHJournal(parse func(string)) error {
 
-	logger.Info("Starting journalctl stream")
+	logger.Info("Starting sdjournal stream")
 
-	cmd := exec.Command(
-		"journalctl",
-		"-f",
-		"-o",
-		"cat",
-		"_SYSTEMD_UNIT=ssh.service",
-	)
-
-	stdout, err := cmd.StdoutPipe()
+	j, err := sdjournal.NewJournal()
 	if err != nil {
 		return err
 	}
+	defer j.Close()
 
-	if err := cmd.Start(); err != nil {
-		return err
-	}
+	_ = j.SeekTail()
 
-	scanner := bufio.NewScanner(stdout)
+	_ = j.AddMatch("_SYSTEMD_UNIT=ssh.service")
 
-	for scanner.Scan() {
-		line := scanner.Text()
-		if line != "" {
-			parse(line)
+	for {
+		n, err := j.Next()
+		if err != nil {
+			return err
+		}
+
+		if n == 0 {
+			j.Wait(sdjournal.IndefiniteWait)
+			continue
+		}
+
+		entry, err := j.GetEntry()
+		if err != nil {
+			continue
+		}
+
+		msg := entry.Fields["MESSAGE"]
+		if msg != "" {
+			parse(msg)
 		}
 	}
-
-	return scanner.Err()
 }
