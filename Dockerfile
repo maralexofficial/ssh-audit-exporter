@@ -15,8 +15,8 @@ FROM debian:bookworm-slim
 
 RUN apt-get update && apt-get install -y \
     ca-certificates \
-    systemd &&
-    rm -rf /var/lib/apt/lists/*
+    systemd \
+    && rm -rf /var/lib/apt/lists/*
 
 ARG UID=1000
 ARG GID=1000
