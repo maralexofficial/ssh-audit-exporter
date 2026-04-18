@@ -14,9 +14,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-var cliLogFile string
-var cliSuccessRegex string
-var cliFailRegex string
+var (
+	cliLogFile      string
+	cliSuccessRegex string
+	cliFailRegex    string
+)
 
 func init() {
 	flag.StringVar(&cliLogFile, "logfile", "", "")
@@ -34,7 +36,13 @@ func main() {
 	exporter.RegisterMetrics()
 
 	cfg := exporter.LoadConfig(cliSuccessRegex, cliFailRegex)
-	successRegex, failRegex, _ := exporter.CompileRegex(cfg)
+
+	successRegex, failRegex, err := exporter.CompileRegex(cfg)
+	if err != nil {
+		logger.Error("Invalid regex configuration: " + err.Error())
+		return
+	}
+
 	exporter.InitParser(successRegex, failRegex)
 
 	mode := source.GetSourceType()
@@ -42,22 +50,35 @@ func main() {
 	switch mode {
 
 	case source.Journal:
-		logger.Info("Using journald as source")
-		go journal.TailSSHJournal(exporter.ParseLine)
+		logger.Info("Using journald (journalctl stream) as source")
+
+		go func() {
+			if err := journal.TailSSHJournal(exporter.ParseLine); err != nil {
+				logger.Error("journalctl stream failed: " + err.Error())
+			}
+		}()
 
 	default:
 		logFile, err := logfile.GetLogFile(cliLogFile)
 		if err != nil {
-			logger.Error("No log file found")
+			logger.Error("No log file found: " + err.Error())
 			return
 		}
 
 		logger.Success("Using file: " + logFile)
-		go logfile.TailFile(logFile, exporter.ParseLine)
+
+		go func() {
+			if err := logfile.TailFile(logFile, exporter.ParseLine); err != nil {
+				logger.Error("file tail failed: " + err.Error())
+			}
+		}()
 	}
 
 	http.Handle("/metrics", promhttp.Handler())
 
 	logger.Info("Metrics available on :9100")
-	http.ListenAndServe(":9100", nil)
+
+	if err := http.ListenAndServe(":9100", nil); err != nil {
+		logger.Error("HTTP server failed: " + err.Error())
+	}
 }

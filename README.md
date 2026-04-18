@@ -17,6 +17,8 @@ docker run -d \
   -p 9100:9100 \
   -e SSH_LOG_TYPE=journal \
   -v /run/systemd/journal/socket:/run/systemd/journal/socket:ro \
+  -v /run/log/journal:/run/log/journal:ro \
+  -v /usr/bin/journalctl:/usr/bin/journalctl:ro
   --env-file .env \
   ssh-audit-exporter
 ```

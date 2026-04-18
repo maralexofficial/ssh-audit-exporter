@@ -1,4 +1,4 @@
-ervices:
+services:
   ssh-exporter:
     image: ssh-audit-exporter
     container_name: ssh-exporter
@@ -11,6 +11,8 @@ ervices:
 
     volumes:
       - /run/systemd/journal/socket:/run/systemd/journal/socket:ro
+      - /run/log/journal:/run/log/journal:ro
+      - /usr/bin/journalctl:/usr/bin/journalctl:ro
 
     env_file:
       - .env

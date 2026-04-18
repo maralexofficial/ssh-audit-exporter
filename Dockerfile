@@ -1,6 +1,6 @@
 FROM golang:1.26 AS builder
 
-RUN apt-get update && apt-get install -y gcc libc6-dev
+RUN apt-get update && apt-get install -y git ca-certificates
 
 WORKDIR /app
 
@@ -9,11 +9,11 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o exporter .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o exporter .
 
 FROM alpine:3.20
 
-RUN apk add --no-cache ca-certificates
+RUN apk add --no-cache ca-certificates util-linux
 
 ARG UID=1000
 ARG GID=1000
