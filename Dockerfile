@@ -20,8 +20,8 @@ RUN CGO_ENABLED=1 GOOS=linux go build -o ssh-audit-exporter .
 FROM debian:bookworm-slim
 
 RUN apt-get update && apt-get install -y \
-    ca-certificates &&
-    rm -rf /var/lib/apt/lists/*
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
 ARG UID=1000
 ARG GID=1000
