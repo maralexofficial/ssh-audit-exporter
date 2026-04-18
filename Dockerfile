@@ -9,7 +9,7 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o exporter .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /app/exporter .
 
 FROM alpine:3.20
 
@@ -23,6 +23,8 @@ RUN addgroup -g $GID exporter && adduser -D -u $UID -G exporter exporter
 WORKDIR /app
 
 COPY --from=builder /app/exporter /app/exporter
+
+RUN chmod +x /app/exporter
 
 COPY .env.example /app/.env
 
