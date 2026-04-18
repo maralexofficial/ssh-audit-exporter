@@ -1,15 +1,15 @@
-FROM golang:1.26.1-alpine AS builder
+FROM golang:1.26-alpine AS builder
+
+RUN apk add --no-cache git gcc musl-dev
 
 WORKDIR /app
-
-RUN apk add --no-cache git
 
 COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o exporter .
+RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o exporter .
 
 FROM alpine:3.20
 
