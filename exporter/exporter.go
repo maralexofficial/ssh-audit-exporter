@@ -199,9 +199,10 @@ func (p *Parser) Parse(line string) {
 		switch r.Rule.Metric {
 
 		case "ssh_logins":
-			if len(labels) == 2 {
-				sshLogins.WithLabelValues(labels[0], labels[1]).Inc()
+			if len(labels) != len(r.Rule.Labels) {
+				continue
 			}
+			sshLogins.WithLabelValues(labels...).Inc()
 
 		case "ssh_sessions":
 			if len(labels) == 1 {
