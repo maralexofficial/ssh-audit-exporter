@@ -11,6 +11,13 @@ services:
     environment:
       SSH_LOG_TYPE: file
 
+    # Load ohne rules ;) or use default rule set
+    # command:
+    #  - --rule=success:ssh_success:Accepted .* for (\w+) from ([0-9.]+)
+    #  - --rule=fail:ssh_failed:Failed .* for (\w+) from ([0-9.]+)
+    #  - --rule=info:su_session:session (opened|closed) for user (\w+)
+    #  - --rule=info:disconnect:Disconnected from user (\w+)
+
     volumes:
       - /var/log/auth.log:/var/log/auth.log:ro
 

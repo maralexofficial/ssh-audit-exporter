@@ -2,79 +2,93 @@ package exporter
 
 import (
 	"fmt"
-	"os"
 	"regexp"
 	"strings"
 )
 
+// -----------------------------
+// Rule Definition
+// -----------------------------
+
 type Rule struct {
 	Name   string
 	Regex  string
-	Type   string
+	Type   string // success | fail | info | any
 	Metric string
+
+	// NEW: defines which regex groups map to Prometheus labels
+	Labels []string
 }
 
-type Config struct {
-	Rules []Rule
+type compiledRule struct {
+	Rule  Rule
+	Regex *regexp.Regexp
 }
 
-var defaultConfig = Config{
-	Rules: []Rule{
-		{
-			Name:   "ssh_success",
-			Type:   "success",
-			Metric: "ssh_logins",
-			Regex:  `Accepted .* for ([^ ]+) from ([0-9.]+)`,
-		},
-		{
-			Name:   "ssh_failed",
-			Type:   "fail",
-			Metric: "ssh_logins",
-			Regex:  `Failed .* for ([^ ]+) from ([0-9.]+)`,
-		},
-		{
-			Name:   "session_open",
-			Type:   "info",
-			Metric: "ssh_sessions",
-			Regex:  `pam_unix\(sshd:session\): session opened for user ([^ (]+)`,
-		},
-		{
-			Name:   "session_close",
-			Type:   "info",
-			Metric: "ssh_sessions",
-			Regex:  `pam_unix\(sshd:session\): session closed for user ([^ ]+)`,
-		},
-		{
-			Name:   "su_open",
-			Type:   "info",
-			Metric: "ssh_sessions",
-			Regex:  `pam_unix\(su:session\): session opened for user ([^ (]+)`,
-		},
-		{
-			Name:   "su_close",
-			Type:   "info",
-			Metric: "ssh_sessions",
-			Regex:  `pam_unix\(su:session\): session closed for user ([^ ]+)`,
-		},
-		{
-			Name:   "sudo",
-			Type:   "info",
-			Metric: "ssh_events",
-			Regex:  `sudo:.* USER=([a-zA-Z0-9_-]+)`,
-		},
-		{
-			Name:   "disconnect",
-			Type:   "info",
-			Metric: "ssh_events",
-			Regex:  `Disconnected from user ([^ ]+)`,
-		},
+// -----------------------------
+// Default Rules
+// -----------------------------
+
+var defaultConfig = []Rule{
+	{
+		Name:   "ssh_success",
+		Type:   "success",
+		Metric: "ssh_logins",
+		Regex:  `Accepted .* for ([^ ]+) from ([0-9.]+)`,
+		Labels: []string{"user", "ip"},
+	},
+	{
+		Name:   "ssh_failed",
+		Type:   "fail",
+		Metric: "ssh_logins",
+		Regex:  `Failed .* for ([^ ]+) from ([0-9.]+)`,
+		Labels: []string{"user", "ip"},
+	},
+	{
+		Name:   "session_open",
+		Type:   "info",
+		Metric: "ssh_sessions",
+		Regex:  `pam_unix\(sshd:session\): session opened for user ([^ (]+)`,
+		Labels: []string{"user"},
+	},
+	{
+		Name:   "session_close",
+		Type:   "info",
+		Metric: "ssh_sessions",
+		Regex:  `pam_unix\(sshd:session\): session closed for user ([^ ]+)`,
+		Labels: []string{"user"},
+	},
+	{
+		Name:   "su_open",
+		Type:   "info",
+		Metric: "ssh_sessions",
+		Regex:  `pam_unix\(su:session\): session opened for user ([^ (]+)`,
+		Labels: []string{"user"},
+	},
+	{
+		Name:   "su_close",
+		Type:   "info",
+		Metric: "ssh_sessions",
+		Regex:  `pam_unix\(su:session\): session closed for user ([^ ]+)`,
+		Labels: []string{"user"},
+	},
+	{
+		Name:   "disconnect",
+		Type:   "info",
+		Metric: "ssh_events",
+		Regex:  `Disconnected from user ([^ ]+)`,
+		Labels: []string{"user"},
 	},
 }
+
+// -----------------------------
+// Rule Parsing (CLI compatible)
+// -----------------------------
 
 func ParseRules(input []string) ([]Rule, error) {
 
 	if len(input) == 0 {
-		return defaultConfig.Rules, nil
+		return defaultConfig, nil
 	}
 
 	var rules []Rule
@@ -94,20 +108,34 @@ func ParseRules(input []string) ([]Rule, error) {
 			Regex:  regex,
 			Type:   "any",
 			Metric: "ssh_events",
+			Labels: []string{},
 		}
 
 		switch {
 		case strings.Contains(name, "success"):
 			rule.Type = "success"
 			rule.Metric = "ssh_logins"
+			rule.Labels = []string{"user", "ip"}
 
 		case strings.Contains(name, "fail"):
 			rule.Type = "fail"
 			rule.Metric = "ssh_logins"
+			rule.Labels = []string{"user", "ip"}
+
+		case strings.Contains(name, "session"):
+			rule.Type = "info"
+			rule.Metric = "ssh_sessions"
+			rule.Labels = []string{"user"}
 
 		case strings.Contains(name, "su"):
 			rule.Type = "info"
 			rule.Metric = "ssh_sessions"
+			rule.Labels = []string{"user"}
+
+		case strings.Contains(name, "disconnect"):
+			rule.Type = "info"
+			rule.Metric = "ssh_events"
+			rule.Labels = []string{"user"}
 		}
 
 		rules = append(rules, rule)
@@ -116,32 +144,9 @@ func ParseRules(input []string) ([]Rule, error) {
 	return rules, nil
 }
 
-func LoadConfig(cliSuccess, cliFail string) Config {
-	cfg := defaultConfig
-
-	if env := os.Getenv("SSH_SUCCESS_REGEX"); env != "" {
-		cfg.Rules[0].Regex = env
-	}
-
-	if env := os.Getenv("SSH_FAIL_REGEX"); env != "" {
-		cfg.Rules[1].Regex = env
-	}
-
-	if cliSuccess != "" {
-		cfg.Rules[0].Regex = cliSuccess
-	}
-
-	if cliFail != "" {
-		cfg.Rules[1].Regex = cliFail
-	}
-
-	return cfg
-}
-
-type compiledRule struct {
-	Rule  Rule
-	Regex *regexp.Regexp
-}
+// -----------------------------
+// Parser
+// -----------------------------
 
 type Parser struct {
 	rules []compiledRule
@@ -152,6 +157,7 @@ func NewParser(rules []Rule) *Parser {
 	compiled := make([]compiledRule, 0, len(rules))
 
 	for _, r := range rules {
+
 		re, err := regexp.Compile(r.Regex)
 		if err != nil {
 			panic(err)
@@ -163,10 +169,12 @@ func NewParser(rules []Rule) *Parser {
 		})
 	}
 
-	return &Parser{
-		rules: compiled,
-	}
+	return &Parser{rules: compiled}
 }
+
+// -----------------------------
+// Core Parse Function
+// -----------------------------
 
 func (p *Parser) Parse(line string) {
 
@@ -177,29 +185,27 @@ func (p *Parser) Parse(line string) {
 			continue
 		}
 
-		switch r.Rule.Name {
+		// Build labels dynamically
+		labels := make([]string, 0, len(r.Rule.Labels))
 
-		case "ssh_success":
-			user := m[1]
-			ip := m[2]
-			sshLogins.WithLabelValues("success", user, ip).Inc()
+		for i := range r.Rule.Labels {
+			if i+1 < len(m) {
+				labels = append(labels, m[i+1])
+			} else {
+				labels = append(labels, "unknown")
+			}
+		}
 
-		case "ssh_failed":
-			user := m[1]
-			ip := m[2]
-			sshLogins.WithLabelValues("failed", user, ip).Inc()
+		switch r.Rule.Metric {
 
-		case "su_session":
-			action := m[1]
-			user := m[2]
-			sshSessions.WithLabelValues(action, user).Inc()
+		case "ssh_logins":
+			sshLogins.WithLabelValues(labels...).Inc()
 
-		case "disconnect":
-			user := m[1]
-			sshEvents.WithLabelValues("disconnect", user).Inc()
+		case "ssh_sessions":
+			sshSessions.WithLabelValues(labels...).Inc()
 
-		default:
-			sshEvents.WithLabelValues(r.Rule.Name, "unknown").Inc()
+		case "ssh_events":
+			sshEvents.WithLabelValues(labels...).Inc()
 		}
 
 		return
