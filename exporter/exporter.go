@@ -106,7 +106,7 @@ func ParseRules(input []string) ([]Rule, error) {
 			Regex:  regex,
 			Type:   "any",
 			Metric: "ssh_events",
-			Labels: []string{"value"}, // safe default
+			Labels: []string{},
 		}
 
 		switch {
@@ -183,38 +183,38 @@ func (p *Parser) Parse(line string) {
 			continue
 		}
 
-		// m[0] = full match, m[1:] = capture groups
+		// m[0] = full match
 		groups := m[1:]
 
+		// safety check
 		if len(groups) < len(r.Rule.Labels) {
 			continue
 		}
 
-		labels := make([]string, len(r.Rule.Labels))
-
-		for i := range r.Rule.Labels {
-			if i < len(groups) {
-				labels[i] = groups[i]
-			} else {
-				labels[i] = "unknown"
-			}
-		}
+		values := groups[:len(r.Rule.Labels)]
 
 		switch r.Rule.Metric {
 
 		case "ssh_logins":
-			if len(labels) == 2 {
-				sshLogins.WithLabelValues(labels[0], labels[1]).Inc()
+			// status + user + ip REQUIRED
+			if len(values) != 2 {
+				continue
 			}
 
+			status := r.Rule.Type // success/fail
+			user := values[0]
+			ip := values[1]
+
+			sshLogins.WithLabelValues(status, user, ip).Inc()
+
 		case "ssh_sessions":
-			if len(labels) == 1 {
-				sshSessions.WithLabelValues(labels[0]).Inc()
+			if len(values) == 1 {
+				sshSessions.WithLabelValues(values[0]).Inc()
 			}
 
 		case "ssh_events":
-			if len(labels) == 1 {
-				sshEvents.WithLabelValues(labels[0]).Inc()
+			if len(values) == 1 {
+				sshEvents.WithLabelValues(values[0]).Inc()
 			}
 		}
 
