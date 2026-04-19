@@ -185,9 +185,8 @@ func (p *Parser) Parse(line string) {
 			sshLogins.WithLabelValues(status, user, ip).Inc()
 
 		case "ssh_sessions":
-			if len(values) == 1 {
-				sshSessions.WithLabelValues(r.Rule.Name, values[0]).Inc()
-			}
+    labelValues := append([]string{r.Rule.Name}, values...)
+    sshSessions.WithLabelValues(labelValues...).Inc()
 
 		case "ssh_events":
 			if len(values) == 1 {
