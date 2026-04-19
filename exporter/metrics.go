@@ -14,12 +14,12 @@ var (
 	)
 
 	sshSessions = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "ssh_sessions_total",
-			Help: "SSH session events (su, session open/close)",
-		},
-		[]string{"action", "user"},
-	)
+    prometheus.CounterOpts{
+        Name: "ssh_sessions_total",
+        Help: "SSH session events (su, session open/close)",
+    },
+    []string{"action", "user", "to_user", "from_user"},
+)
 
 	sshEvents = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
