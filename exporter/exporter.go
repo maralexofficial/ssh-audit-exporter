@@ -116,7 +116,7 @@ func ParseRules(input []string) ([]Rule, error) {
 		case strings.Contains(name, "su"):
 			rule.Type = "info"
 			rule.Metric = "ssh_sessions"
-			rule.Labels = []string{"user"}
+			rule.Labels = []string{"to_user", "from_user"}
 
 		case strings.Contains(name, "disconnect"):
 			rule.Type = "info"
