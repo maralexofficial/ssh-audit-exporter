@@ -59,8 +59,8 @@ var defaultConfig = []Rule{
 		Name:   "su_close",
 		Type:   "info",
 		Metric: "ssh_sessions",
-		Regex:  `pam_unix\(su:session\): session closed for user ([^ ]+)`,
-		Labels: []string{"user"},
+		Regex:  `pam_unix\(su:session\): session closed for user ([^ ]+).* by ([^ ]+)`,
+		Labels: []string{"to_user", "from_user"},
 	},
 	{
 		Name:   "disconnect",
