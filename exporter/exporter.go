@@ -185,8 +185,26 @@ func (p *Parser) Parse(line string) {
 			sshLogins.WithLabelValues(status, user, ip).Inc()
 
 		case "ssh_sessions":
-    labelValues := append([]string{r.Rule.Name}, values...)
-    sshSessions.WithLabelValues(labelValues...).Inc()
+
+    labels := map[string]string{
+        "action":    r.Rule.Name,
+        "user":      "",
+        "to_user":   "",
+        "from_user": "",
+    }
+
+    for i, key := range r.Rule.Labels {
+        if i < len(values) {
+            labels[key] = values[i]
+        }
+    }
+
+    sshSessions.WithLabelValues(
+        labels["action"],
+        labels["user"],
+        labels["to_user"],
+        labels["from_user"],
+    ).Inc()
 
 		case "ssh_events":
 			if len(values) == 1 {
