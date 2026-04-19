@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 )
 
 type Rule struct {
@@ -162,6 +163,8 @@ func NewParser(rules []Rule) *Parser {
 
 func (p *Parser) Parse(line string) {
 
+	now := float64(time.Now().Unix())
+
 	for _, r := range p.rules {
 
 		m := r.Regex.FindStringSubmatch(line)
@@ -178,42 +181,62 @@ func (p *Parser) Parse(line string) {
 				return
 			}
 
+			user := values[0]
+			ip := values[1]
+
 			sshLogins.WithLabelValues(
 				r.Rule.Type,
-				values[0],
-				values[1],
+				user,
+				ip,
 			).Inc()
+
+			sshLoginLast.WithLabelValues(user, ip).Set(now)
 
 		case "ssh_session_open":
 			if len(values) != 1 {
 				return
 			}
-			sshSessionOpen.WithLabelValues(values[0]).Inc()
+
+			user := values[0]
+			sshSessionOpen.WithLabelValues(user).Inc()
+			sshSessionLast.WithLabelValues("open", user).Set(now)
 
 		case "ssh_session_close":
 			if len(values) != 1 {
 				return
 			}
-			sshSessionClose.WithLabelValues(values[0]).Inc()
+
+			user := values[0]
+			sshSessionClose.WithLabelValues(user).Inc()
+			sshSessionLast.WithLabelValues("close", user).Set(now)
 
 		case "ssh_su_open":
 			if len(values) != 2 {
 				return
 			}
-			sshSuOpen.WithLabelValues(values[1], values[0]).Inc()
-			// Achtung: Reihenfolge! from_user, to_user
+
+			toUser := values[0]
+			fromUser := values[1]
+			sshSuOpen.WithLabelValues(fromUser, toUser).Inc()
+			sshSuLast.WithLabelValues(fromUser, toUser).Set(now)
 
 		case "ssh_su_close":
 			if len(values) != 1 {
 				return
 			}
-			sshSuClose.WithLabelValues(values[0]).Inc()
+
+			user := values[0]
+			sshSuClose.WithLabelValues(user).Inc()
+			sshSessionLast.WithLabelValues("su_close", user).Set(now)
 
 		case "ssh_disconnect":
 			if len(values) != 1 {
 				return
 			}
-			sshDisconnect.WithLabelValues(values[0]).Inc()
+
+			user := values[0]
+			sshDisconnect.WithLabelValues(user).Inc()
+			sshDisconnectLast.WithLabelValues(user).Set(now)
 		}
 
 		return
