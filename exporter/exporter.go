@@ -52,8 +52,8 @@ var defaultConfig = []Rule{
 		Name:   "su_open",
 		Type:   "info",
 		Metric: "ssh_sessions",
-		Regex:  `pam_unix\(su:session\): session opened for user ([^ (]+)`,
-		Labels: []string{"user"},
+		Regex:  `pam_unix\(su:session\): session opened for user ([^ (]+)\(uid=\d+\) by ([^ (]+)`,
+	Labels: []string{"to_user", "from_user"},
 	},
 	{
 		Name:   "su_close",
