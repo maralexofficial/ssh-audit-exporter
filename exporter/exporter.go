@@ -34,38 +34,44 @@ var defaultConfig = []Rule{
 		Regex:  `Failed .* for ([^ ]+) from ([0-9.]+)`,
 		Labels: []string{"user", "ip"},
 	},
+
+	// SSH Session
 	{
 		Name:   "session_open",
 		Type:   "info",
-		Metric: "ssh_sessions",
+		Metric: "ssh_session_open",
 		Regex:  `pam_unix\(sshd:session\): session opened for user ([^ (]+)`,
 		Labels: []string{"user"},
 	},
 	{
 		Name:   "session_close",
 		Type:   "info",
-		Metric: "ssh_sessions",
-		Regex:  `pam_unix\(sshd:session\): session closed for user ([^ ]+)`,
+		Metric: "ssh_session_close",
+		Regex:  `pam_unix\(sshd:session\): session closed for user ([^ (]+)`,
 		Labels: []string{"user"},
 	},
+
+	// SU (sauber ohne (uid=...))
 	{
 		Name:   "su_open",
 		Type:   "info",
-		Metric: "ssh_sessions",
-		Regex:  `pam_unix\(su:session\): session opened for user ([^ ]+).* by ([^ ]+)`,
+		Metric: "ssh_su_open",
+		Regex:  `pam_unix\(su:session\): session opened for user ([^ (]+).* by ([^ (]+)`,
 		Labels: []string{"to_user", "from_user"},
 	},
 	{
 		Name:   "su_close",
 		Type:   "info",
-		Metric: "ssh_sessions",
-		Regex:  `pam_unix\(su:session\): session closed for user ([^ ]+)`,
+		Metric: "ssh_su_close",
+		Regex:  `pam_unix\(su:session\): session closed for user ([^ (]+)`,
 		Labels: []string{"user"},
 	},
+
+	// Disconnect
 	{
 		Name:   "disconnect",
 		Type:   "info",
-		Metric: "ssh_events",
+		Metric: "ssh_disconnect",
 		Regex:  `Disconnected from user ([^ ]+)`,
 		Labels: []string{"user"},
 	},
@@ -163,53 +169,51 @@ func (p *Parser) Parse(line string) {
 			continue
 		}
 
-		groups := m[1:]
-
-		if len(groups) < len(r.Rule.Labels) {
-			continue
-		}
-
-		values := groups[:len(r.Rule.Labels)]
+		values := m[1:]
 
 		switch r.Rule.Metric {
 
 		case "ssh_logins":
 			if len(values) != 2 {
-				continue
+				return
 			}
 
-			status := r.Rule.Type
-			user := values[0]
-			ip := values[1]
-
-			sshLogins.WithLabelValues(status, user, ip).Inc()
-
-		case "ssh_sessions":
-
-			labels := map[string]string{
-				"action":    r.Rule.Name,
-				"user":      "",
-				"to_user":   "",
-				"from_user": "",
-			}
-
-			for i, key := range r.Rule.Labels {
-				if i < len(values) {
-					labels[key] = values[i]
-				}
-			}
-
-			sshSessions.WithLabelValues(
-				labels["action"],
-				labels["user"],
-				labels["to_user"],
-				labels["from_user"],
+			sshLogins.WithLabelValues(
+				r.Rule.Type,
+				values[0],
+				values[1],
 			).Inc()
 
-		case "ssh_events":
-			if len(values) == 1 {
-				sshEvents.WithLabelValues(r.Rule.Type, values[0]).Inc()
+		case "ssh_session_open":
+			if len(values) != 1 {
+				return
 			}
+			sshSessionOpen.WithLabelValues(values[0]).Inc()
+
+		case "ssh_session_close":
+			if len(values) != 1 {
+				return
+			}
+			sshSessionClose.WithLabelValues(values[0]).Inc()
+
+		case "ssh_su_open":
+			if len(values) != 2 {
+				return
+			}
+			sshSuOpen.WithLabelValues(values[1], values[0]).Inc()
+			// Achtung: Reihenfolge! from_user, to_user
+
+		case "ssh_su_close":
+			if len(values) != 1 {
+				return
+			}
+			sshSuClose.WithLabelValues(values[0]).Inc()
+
+		case "ssh_disconnect":
+			if len(values) != 1 {
+				return
+			}
+			sshDisconnect.WithLabelValues(values[0]).Inc()
 		}
 
 		return

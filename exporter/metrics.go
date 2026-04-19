@@ -5,6 +5,7 @@ import (
 )
 
 var (
+	// Login Events
 	sshLogins = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "ssh_logins_total",
@@ -13,25 +14,55 @@ var (
 		[]string{"status", "user", "ip"},
 	)
 
-	sshSessions = prometheus.NewCounterVec(
-    prometheus.CounterOpts{
-        Name: "ssh_sessions_total",
-        Help: "SSH session events (su, session open/close)",
-    },
-    []string{"action", "user", "to_user", "from_user"},
-)
-
-	sshEvents = prometheus.NewCounterVec(
+	// Session Events (nur user)
+	sshSessionOpen = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "ssh_events_total",
-			Help: "Generic SSH-related events",
+			Name: "ssh_session_open_total",
+			Help: "SSH session opened",
 		},
-		[]string{"type", "user"},
+		[]string{"user"},
+	)
+
+	sshSessionClose = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "ssh_session_close_total",
+			Help: "SSH session closed",
+		},
+		[]string{"user"},
+	)
+
+	// SU Events (nur hier from/to!)
+	sshSuOpen = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "ssh_su_open_total",
+			Help: "su session opened",
+		},
+		[]string{"from_user", "to_user"},
+	)
+
+	sshSuClose = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "ssh_su_close_total",
+			Help: "su session closed",
+		},
+		[]string{"user"},
+	)
+
+	// Disconnect / sonstige Events
+	sshDisconnect = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "ssh_disconnect_total",
+			Help: "SSH disconnect events",
+		},
+		[]string{"user"},
 	)
 )
 
 func RegisterMetrics() {
 	prometheus.MustRegister(sshLogins)
-	prometheus.MustRegister(sshSessions)
-	prometheus.MustRegister(sshEvents)
+	prometheus.MustRegister(sshSessionOpen)
+	prometheus.MustRegister(sshSessionClose)
+	prometheus.MustRegister(sshSuOpen)
+	prometheus.MustRegister(sshSuClose)
+	prometheus.MustRegister(sshDisconnect)
 }
