@@ -60,7 +60,7 @@ var defaultConfig = []Rule{
 		Type:   "info",
 		Metric: "ssh_sessions",
 		Regex:  `pam_unix\(su:session\): session closed for user ([^ ]+)`,
-		Labels: []string{"user"},
+		Labels: []string{"to_user"},
 	},
 	{
 		Name:   "disconnect",
