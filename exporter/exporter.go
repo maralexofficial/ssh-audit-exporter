@@ -53,7 +53,7 @@ var defaultConfig = []Rule{
 		Type:   "info",
 		Metric: "ssh_sessions",
 		Regex:  `pam_unix\(su:session\): session opened for user ([^ ]+).* by ([^ ]+)`,
-	Labels: []string{"to_user", "from_user"},
+		Labels: []string{"to_user", "from_user"},
 	},
 	{
 		Name:   "su_close",
@@ -186,25 +186,25 @@ func (p *Parser) Parse(line string) {
 
 		case "ssh_sessions":
 
-    labels := map[string]string{
-        "action":    r.Rule.Name,
-        "user":      "",
-        "to_user":   "",
-        "from_user": "",
-    }
+			labels := map[string]string{
+				"action":    r.Rule.Name,
+				"user":      "",
+				"to_user":   "",
+				"from_user": "",
+			}
 
-    for i, key := range r.Rule.Labels {
-        if i < len(values) {
-            labels[key] = values[i]
-        }
-    }
+			for i, key := range r.Rule.Labels {
+				if i < len(values) {
+					labels[key] = values[i]
+				}
+			}
 
-    sshSessions.WithLabelValues(
-        labels["action"],
-        labels["user"],
-        labels["to_user"],
-        labels["from_user"],
-    ).Inc()
+			sshSessions.WithLabelValues(
+				labels["action"],
+				labels["user"],
+				labels["to_user"],
+				labels["from_user"],
+			).Inc()
 
 		case "ssh_events":
 			if len(values) == 1 {
