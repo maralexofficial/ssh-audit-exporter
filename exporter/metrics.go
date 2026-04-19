@@ -18,7 +18,7 @@ var (
         Name: "ssh_sessions_total",
         Help: "SSH session events (su, session open/close)",
     },
-    []string{"action", "user", "to_user", "from_user"},
+    []string{"action", "to_user", "from_user"},
 )
 
 	sshEvents = prometheus.NewCounterVec(
